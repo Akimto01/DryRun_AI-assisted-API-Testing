@@ -42,6 +42,21 @@ Ideas and known gaps for extending this framework, roughly in priority order.
       expiry, password change, or logout-everywhere would still need
       it. Revisit only if manual regeneration (expected every few
       weeks) turns out to be a real operational pain in practice.
+- [ ] **Systemic risk: test account's free-tier 5-project limit.**
+      Discovered 2026-08-28 while fixing `tests/ui/projects.robot`
+      locators: leftover `TEST_*` projects from earlier failed/interrupted
+      runs (teardown never ran, e.g. due to the Suite-Setup and locator
+      bugs just fixed) had filled all 5 free-tier project slots. Once
+      full, Todoist replaces the "Add project" dialog with a "Try Pro"
+      paywall modal, so any future teardown failure won't just leak one
+      project - it'll eventually block every UI test that creates a
+      project with a confusing paywall failure instead of the real cause.
+      Possible fixes: (a) setup-time cleanup - delete everything with the
+      `TEST_` prefix before the UI suite runs, so a bad run can never
+      accumulate past one cycle; or (b) a periodic (manual or scheduled)
+      sweep of `TEST_*` projects independent of any single run's
+      teardown. Not implemented - no code changed for this, just noting
+      the risk.
 - [ ] Extend `tests/ui/labels_filters.robot` with filter creation/query
       coverage and multi-label scenarios.
 - [ ] Extend `tests/ui/sharing.robot` with a second real collaborator

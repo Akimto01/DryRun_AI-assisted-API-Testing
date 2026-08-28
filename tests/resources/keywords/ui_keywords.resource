@@ -32,13 +32,16 @@ Open Todoist App With Saved Session
 Verify Todoist Session Is Valid
     [Documentation]    Confirms the loaded storage state actually
     ...    authenticated us, rather than letting a stale/expired session
-    ...    surface later as a confusing timeout deep inside a test.
+    ...    surface later as a confusing timeout deep inside a test. Waits
+    ...    for the sidebar container rather than the task list, since the
+    ...    task list doesn't render at all on an empty Inbox - see
+    ...    Docs/test_plan.md "Known limitations".
     ${current_url}=    Get Url
     IF    'auth/login' in $current_url
         Fail    ${STORAGE_STATE_INVALID_MESSAGE}
     END
     TRY
-        Wait For Elements State    ${APP_TASK_LIST}    visible    timeout=10s
+        Wait For Elements State    ${APP_SIDEBAR_CONTAINER}    visible    timeout=10s
     EXCEPT
         Fail    ${STORAGE_STATE_INVALID_MESSAGE}
     END

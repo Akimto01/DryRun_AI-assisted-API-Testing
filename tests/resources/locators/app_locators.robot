@@ -12,7 +12,12 @@ Documentation    Selectors for the Todoist web app (app.todoist.com).
 
 *** Variables ***
 # --- App shell ---
-${APP_TASK_LIST}               [data-testid="task-list"]
+# Verified live (2026-08-28) against a real logged-in session: the sidebar
+# container (holds the account name) renders right after login regardless
+# of whether the current view (e.g. an empty Inbox) has any tasks - unlike
+# [data-testid="task-list"], which only renders when the view has content
+# and previously caused false "session invalid" failures on empty Inboxes.
+${APP_SIDEBAR_CONTAINER}       [data-testid="app-sidebar-container"]
 ${MORE_OPTIONS_BUTTON}         [aria-label="More options"]
 
 # --- Tasks ---

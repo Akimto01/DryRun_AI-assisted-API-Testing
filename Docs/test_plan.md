@@ -56,8 +56,8 @@
     `Open Todoist App With Saved Session`
     (`tests/resources/keywords/ui_keywords.resource`) loads that session
     via `New Context storageState=...` instead of filling in the login
-    form, and explicitly verifies the session is still valid (task list
-    visible, no redirect to `/auth/login`) before continuing.
+    form, and explicitly verifies the session is still valid (sidebar
+    container visible, no redirect to `/auth/login`) before continuing.
   - **Residual limitation:** the saved session isn't permanent - Todoist
     sessions last on the order of days to weeks. When it expires, every
     UI suite (`tests/ui/tasks.robot`, `tests/ui/projects.robot`,
@@ -71,6 +71,18 @@
     workflow with permission to rewrite repository secrets, a
     meaningfully larger security surface, for a manual step that likely
     only recurs every few weeks).
+  - **False-negative fix (2026-08-28):** `Verify Todoist Session Is Valid`
+    originally waited for `[data-testid="task-list"]`, which only renders
+    when the current view actually has tasks in it. Against a test
+    account with an empty Inbox, that element never appears, so the
+    keyword reported the same "session invalid" message even though the
+    saved session was authenticating fine (confirmed via `Get Url`
+    returning `https://app.todoist.com/app/`, not a redirect to
+    `/auth/login`, and a failure screenshot showing the logged-in account
+    and an empty-Inbox placeholder). Replaced with
+    `[data-testid="app-sidebar-container"]`, the sidebar shell that
+    renders right after login regardless of whether the current view has
+    any content.
 - **Sharing tests use a single account.** `tests/ui/sharing.robot` can
   only verify that an invite becomes "pending" - verifying acceptance
   requires a second, real collaborator account (see `Docs/BACKLOG.md`).

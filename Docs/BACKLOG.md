@@ -2,10 +2,23 @@
 
 Ideas and known gaps for extending this framework, roughly in priority order.
 
-- [ ] Verify `tests/resources/locators/app_locators.robot` and the UI
-      login flow (`tests/resources/keywords/ui_keywords.resource`)
-      against a real Todoist test account, and fix up any selectors that
-      don't match. See Docs/test_plan.md "Known limitations".
+- [ ] Fix `Log In To Todoist` (`tests/resources/keywords/ui_keywords.resource`):
+      live runs (2026-08-28, `pr_gate.yml` runs `33159448692` and
+      `33159854560`) show the login submit button stays
+      `aria-disabled="true"` (`aria-describedby="agreement-footnote"`)
+      after filling email/password, so `Click ${LOGIN_SUBMIT_BUTTON}`
+      times out. Candidate fix, *not yet applied* - inspect the actual
+      login page (e.g. a Playwright trace/screenshot on failure) for the
+      consent/agreement element referenced by `agreement-footnote`; if
+      it's a simple checkbox, adding one `Click Element` (or equivalent
+      Browser Library keyword) on it before the existing
+      `Click ${LOGIN_SUBMIT_BUTTON}` call may be enough to unblock the
+      button. Needs confirmation against the live page before editing
+      the keyword - the exact selector isn't known yet.
+- [ ] Once login succeeds, verify the rest of
+      `tests/resources/locators/app_locators.robot` against the real
+      account and fix up any selectors that don't match. See
+      Docs/test_plan.md "Known limitations".
 - [ ] Extend `tests/ui/labels_filters.robot` with filter creation/query
       coverage and multi-label scenarios.
 - [ ] Extend `tests/ui/sharing.robot` with a second real collaborator

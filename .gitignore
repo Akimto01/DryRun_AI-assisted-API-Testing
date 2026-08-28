@@ -16,3 +16,6 @@ output.xml
 
 # Playwright storage state (session cookies) - see scripts/generate_storage_state.py
 storageState.json
+
+# Raw cookie export used to build storageState.json - contains auth tokens
+cookies_export.json

@@ -23,9 +23,8 @@ Create A Project
     Click    ${PROJECT_ADD_SUBMIT_BUTTON}
     ${project_locator}=    Get Project Item Locator    ${name}
     Wait For Elements State    ${project_locator}    visible    timeout=10s
-    ${projects}=    API Get Projects
-    @{names}=    Evaluate    [p['name'] for p in $projects]
-    List Should Contain Value    ${names}    ${name}
+    Wait Until Keyword Succeeds    10x    1s
+    ...    Project Should Be Listed Via Api    ${name}
     [Teardown]    Delete Test Project By Name    ${name}
 
 Rename A Project
@@ -42,8 +41,8 @@ Rename A Project
     Click    ${PROJECT_RENAME_SUBMIT_BUTTON}
     ${renamed_locator}=    Get Project Item Locator    ${new_name}
     Wait For Elements State    ${renamed_locator}    visible    timeout=10s
-    ${project}=    API Get Project    ${project_id}
-    Should Be Equal    ${project}[name]    ${new_name}
+    Wait Until Keyword Succeeds    10x    1s
+    ...    Project Should Have Name Via Api    ${project_id}    ${new_name}
     [Teardown]    Delete Test Project    ${project_id}
 
 Delete A Project

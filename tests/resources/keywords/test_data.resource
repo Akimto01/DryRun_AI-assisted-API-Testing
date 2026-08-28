@@ -60,6 +60,29 @@ Delete Test Section
     Initialize Todoist API Session
     API Delete Section    ${section_id}
 
+Project Should Be Listed Via Api
+    [Documentation]    Fails unless a project named ${name} appears in the
+    ...    API's project list. Meant to be wrapped in `Wait Until Keyword
+    ...    Succeeds`: Todoist's UI updates optimistically (client-side)
+    ...    before the API is guaranteed to reflect the same change, so a
+    ...    single immediate check can see stale data - see
+    ...    Docs/test_plan.md "Known limitations".
+    [Arguments]    ${name}
+    Initialize Todoist API Session
+    ${projects}=    API Get Projects
+    @{names}=    Evaluate    [p['name'] for p in $projects]
+    List Should Contain Value    ${names}    ${name}
+
+Project Should Have Name Via Api
+    [Documentation]    Fails unless the project with id ${project_id} has
+    ...    name ${expected_name} via the API. Meant to be wrapped in
+    ...    `Wait Until Keyword Succeeds` for the same eventual-consistency
+    ...    reason as `Project Should Be Listed Via Api`.
+    [Arguments]    ${project_id}    ${expected_name}
+    Initialize Todoist API Session
+    ${project}=    API Get Project    ${project_id}
+    Should Be Equal    ${project}[name]    ${expected_name}
+
 Find Task By Content In Project
     [Documentation]    Fetches tasks for a project and returns the first one whose content matches exactly. Fails if none match.
     [Arguments]    ${project_id}    ${content}

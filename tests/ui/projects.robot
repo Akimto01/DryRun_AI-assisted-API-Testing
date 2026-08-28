@@ -24,8 +24,8 @@ Create A Project
     ${project_locator}=    Get Project Item Locator    ${name}
     Wait For Elements State    ${project_locator}    visible    timeout=10s
     ${projects}=    API Get Projects
-    ${found}=    Evaluate    any(p['name'] == $name for p in $projects)
-    Should Be True    ${found}
+    @{names}=    Evaluate    [p['name'] for p in $projects]
+    List Should Contain Value    ${names}    ${name}
     [Teardown]    Delete Test Project By Name    ${name}
 
 Rename A Project
@@ -40,6 +40,8 @@ Rename A Project
     Click    ${PROJECT_RENAME_MENU_ITEM}
     Fill Text    ${PROJECT_NAME_INPUT}    ${new_name}
     Click    ${PROJECT_RENAME_SUBMIT_BUTTON}
+    ${renamed_locator}=    Get Project Item Locator    ${new_name}
+    Wait For Elements State    ${renamed_locator}    visible    timeout=10s
     ${project}=    API Get Project    ${project_id}
     Should Be Equal    ${project}[name]    ${new_name}
     [Teardown]    Delete Test Project    ${project_id}

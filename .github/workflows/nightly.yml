@@ -1,0 +1,58 @@
+name: Nightly Full Regression
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      include_tags:
+        description: 'Comma-separated tags to include (blank = run everything)'
+        required: false
+        default: ''
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
+      TODOIST_EMAIL: ${{ secrets.TODOIST_EMAIL }}
+      TODOIST_PASSWORD: ${{ secrets.TODOIST_PASSWORD }}
+      TODOIST_SHARE_TEST_EMAIL: ${{ secrets.TODOIST_SHARE_TEST_EMAIL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          rfbrowser init
+
+      - name: Run full suite (known_defect tests reported as SKIP, not FAIL)
+        shell: pwsh
+        run: |
+          $tagsInput = "${{ github.event.inputs.include_tags }}"
+          $tags = @()
+          if ($tagsInput) {
+            $tags = $tagsInput -split ',' | ForEach-Object { $_.Trim() }
+          }
+          if ($tags.Count -gt 0) {
+            ./run-tests.ps1 -Suite all -Include $tags -ExtraArgs '--skiponfailure','known_defect' -ResultsDir results
+          } else {
+            ./run-tests.ps1 -Suite all -ExtraArgs '--skiponfailure','known_defect' -ResultsDir results
+          }
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-results-nightly
+          path: results/
+
+      - name: Send nightly summary email
+        if: always()
+        run: |
+          echo "TODO: integrate Resend (https://resend.com) to email a log.html/report.html summary to the team."
+          echo "Placeholder step - requires a RESEND_API_KEY secret and a small notification script. See Docs/BACKLOG.md."

@@ -1,0 +1,4 @@
+robotframework>=7.0
+robotframework-browser>=18.0
+robotframework-requests>=0.9.7
+PyYAML>=6.0

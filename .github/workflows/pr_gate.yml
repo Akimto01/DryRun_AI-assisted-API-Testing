@@ -1,0 +1,38 @@
+name: PR Gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
+      TODOIST_EMAIL: ${{ secrets.TODOIST_EMAIL }}
+      TODOIST_PASSWORD: ${{ secrets.TODOIST_PASSWORD }}
+      TODOIST_SHARE_TEST_EMAIL: ${{ secrets.TODOIST_SHARE_TEST_EMAIL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          rfbrowser init
+
+      - name: Run smoke + regression tests (known_defect excluded)
+        shell: pwsh
+        run: ./run-tests.ps1 -Suite all -Include smoke,regression -Exclude known_defect -ResultsDir results
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-results
+          path: results/

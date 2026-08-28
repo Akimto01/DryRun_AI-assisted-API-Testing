@@ -1,0 +1,16 @@
+# Sample content for tests that want more realistic task text than a bare
+# generated name. Not required by the current suite - a starting point for
+# extending coverage (priority, description, due-date phrasing, ...).
+sample_tasks:
+  - content: "Buy groceries"
+    description: "Milk, eggs, bread"
+    priority: 1
+  - content: "Write quarterly report"
+    description: ""
+    priority: 4
+
+due_date_phrases:
+  - "today"
+  - "tomorrow"
+  - "every day"
+  - "every monday"

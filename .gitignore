@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Robot Framework results
+results/
+log.html
+report.html
+output.xml
+
+# Secrets - never commit real credentials
+.env
+.env.local

@@ -1,0 +1,42 @@
+# Known defects registry for the Todoist test framework.
+#
+# Convention:
+# - Each real defect gets a unique id (e.g. TODOIST-1) and an entry below.
+# - Any test guarding that defect is tagged `known_defect` *and* the
+#   defect id, e.g.:
+#       [Tags]    known_defect    TODOIST-1
+#   Its assertion always encodes the CORRECT/expected behavior, never the
+#   buggy actual one. A known_defect test going RED is therefore the
+#   expected, healthy state - it is actively guarding a live defect, not
+#   a regression to chase.
+# - Run tests with `--skiponfailure known_defect` (see run-tests.ps1 and
+#   .github/workflows/nightly.yml) so a known_defect failure is reported
+#   as SKIP rather than FAIL in log.html/report.html - visible without
+#   breaking the build. pr_gate.yml excludes known_defect entirely so a
+#   live defect never blocks a PR.
+# - If a known_defect test unexpectedly turns green, treat it as a
+#   signal, not a pass to celebrate: retest manually, add a dated note
+#   to the relevant entry below, and only then remove the known_defect
+#   tag from the test.
+#
+# This is a fresh project, so there are no real defects yet. The entry
+# below is a placeholder showing the expected shape - replace or remove
+# it once a real defect is found.
+
+defects:
+  - id: TODOIST-0
+    title: "Placeholder entry - remove once a real defect is logged"
+    status: open  # open | fixed_pending_verification | closed
+    severity: minor
+    area: tasks
+    reported_date: "2026-08-28"
+    description: >
+      Placeholder demonstrating the registry format. Not a real defect.
+    steps_to_reproduce: >
+      N/A
+    expected_result: >
+      N/A
+    actual_result: >
+      N/A
+    linked_tests: []
+    notes: []

@@ -1,0 +1,8 @@
+# Sample content for tests that want realistic project names/colors.
+# Not required by the current suite - a starting point for extending
+# coverage.
+sample_projects:
+  - name: "Personal"
+    color: "charcoal"
+  - name: "Work"
+    color: "blue"

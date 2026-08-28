@@ -4,15 +4,15 @@ Documentation    UI tests for basic task lifecycle (create/complete/delete).
 ...              via the API in Test Setup and torn down via the API in
 ...              Test Teardown - see tests/resources/keywords/test_data.resource.
 ...
-...              KNOWN LIMITATION: login and app-shell locators in
-...              tests/resources/locators/app_locators.robot have not
-...              been verified against a live account - see
+...              Uses a saved login session (Playwright storage state)
+...              instead of automating the login form - see
+...              tests/resources/keywords/ui_keywords.resource and
 ...              Docs/test_plan.md "Known limitations".
 Resource         ../../config/variables.robot
 Resource         ../resources/keywords/test_data.resource
 Resource         ../resources/keywords/ui_keywords.resource
 
-Suite Setup      Open Todoist App And Log In
+Suite Setup      Open Todoist App With Saved Session
 Suite Teardown   Close Todoist App
 Test Setup       Create Fresh Test Project For Task UI Tests
 Test Teardown    Delete Test Project    ${TEST_PROJECT_ID}

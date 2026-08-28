@@ -38,25 +38,39 @@
   current `https://api.todoist.com/api/v1` endpoint instead - verified
   live on 2026-08-28 (full create/rename/close/delete cycle for both
   projects and tasks). See `README.md` ("Where API lives") for details.
-- **UI login fails on a disabled submit button, not on missing
-  credentials.** `TODOIST_EMAIL`/`TODOIST_PASSWORD` are configured as
-  GitHub Secrets and available in CI; `pr_gate.yml` has run live against
-  them twice (2026-08-28, runs `33159448692` and `33159854560`). All 7
-  API tests pass in both runs. All 9 UI tests fail at `Suite Setup`
-  (`Open Todoist App And Log In`) on `Click ${LOGIN_SUBMIT_BUTTON}`
-  inside the `Log In To Todoist` keyword
-  (`tests/resources/keywords/ui_keywords.resource`): the submit button
-  (`button[type="submit"]`) stays `aria-disabled="true"`
-  (`aria-describedby="agreement-footnote"`) even after both fields are
-  filled - most likely because the login form has an unchecked
-  consent/agreement element that the keyword doesn't interact with (see
-  `Docs/BACKLOG.md` for a candidate fix). Until that's fixed, every UI
-  suite that depends on `Open Todoist App And Log In` -
-  `tests/ui/tasks.robot`, `tests/ui/projects.robot`,
-  `tests/ui/labels_filters.robot`, `tests/ui/sharing.robot`, and
-  `tests/ui/recurring_tasks.robot` - fails before reaching its own
-  locators, so those locators remain unverified too, just for a
-  different reason than originally assumed.
+- **UI login is behind Cloudflare Turnstile, so it is never automated.**
+  Live diagnosis (2026-08-28, throwaway `diagnose_login.yml` run - since
+  removed) confirmed the earlier "unchecked consent checkbox" theory was
+  wrong: the page has zero `input[type="checkbox"]` elements, and
+  `aria-describedby="agreement-footnote"` just points at a plain text
+  disclaimer with Terms-of-Service/Privacy-Policy links, not an
+  interactive element. The actual blocker is a hidden Cloudflare
+  Turnstile widget (`#cf-turnstile`) whose `cf-turnstile-response` token
+  stays empty against a headless, scripted browser - which is exactly
+  what Turnstile is designed to detect and block, so no locator fix can
+  unblock the submit button.
+  - **Resolution:** UI tests don't automate the login form at all.
+    `scripts/generate_storage_state.py` has a human complete the real
+    login (including Turnstile) once, in a real, visible Chrome window,
+    and saves the resulting Playwright session (`storageState.json`).
+    `Open Todoist App With Saved Session`
+    (`tests/resources/keywords/ui_keywords.resource`) loads that session
+    via `New Context storageState=...` instead of filling in the login
+    form, and explicitly verifies the session is still valid (task list
+    visible, no redirect to `/auth/login`) before continuing.
+  - **Residual limitation:** the saved session isn't permanent - Todoist
+    sessions last on the order of days to weeks. When it expires, every
+    UI suite (`tests/ui/tasks.robot`, `tests/ui/projects.robot`,
+    `tests/ui/labels_filters.robot`, `tests/ui/sharing.robot`,
+    `tests/ui/recurring_tasks.robot`) fails immediately at Suite Setup
+    with an explicit message naming the fix
+    (`scripts/generate_storage_state.py` + update the
+    `TODOIST_STORAGE_STATE_B64` GitHub Secret), rather than a confusing
+    timeout. Automating that refresh was considered and deliberately
+    deferred - see `Docs/BACKLOG.md` for the trade-off (it would need a
+    workflow with permission to rewrite repository secrets, a
+    meaningfully larger security surface, for a manual step that likely
+    only recurs every few weeks).
 - **Sharing tests use a single account.** `tests/ui/sharing.robot` can
   only verify that an invite becomes "pending" - verifying acceptance
   requires a second, real collaborator account (see `Docs/BACKLOG.md`).

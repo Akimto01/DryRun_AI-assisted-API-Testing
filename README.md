@@ -42,13 +42,53 @@ Library, GitHub Actions CI).
 
 ### How credentials are handled
 - API token and login credentials are **only** ever read from environment
-  variables: `TODOIST_API_TOKEN`, and optionally `TODOIST_EMAIL` /
-  `TODOIST_PASSWORD` (needed for UI tests) and `TODOIST_SHARE_TEST_EMAIL`
-  (used by the sharing UI test).
+  variables: `TODOIST_API_TOKEN`, `TODOIST_SHARE_TEST_EMAIL` (used by the
+  sharing UI test), and `TODOIST_EMAIL` / `TODOIST_PASSWORD`.
 - Locally: set them as environment variables or via your OS credential
   manager - never commit real values. `config/credentials.template`
   documents the full list with empty placeholders.
 - In CI: supplied as GitHub Secrets (see `.github/workflows/`).
+- **`TODOIST_EMAIL`/`TODOIST_PASSWORD` are kept as GitHub Secrets but are
+  NOT wired into either CI workflow.** Todoist's login form is behind
+  Cloudflare Turnstile, which blocks scripted logins (see
+  `Docs/test_plan.md` → "Known limitations" for the diagnosis), so UI
+  tests never automate the login form. These two variables only matter
+  locally, as input to `scripts/generate_storage_state.py` (see below).
+- **UI tests authenticate via a saved Playwright session instead.** A
+  human runs `scripts/generate_storage_state.py` locally - it opens a
+  real, visible Chrome window (`channel="chrome"`, not the bundled
+  Chromium), prefills email/password if provided, and waits for the
+  human to complete the actual login (solving any Turnstile challenge
+  themselves). It then saves `storageState.json` (session cookies -
+  gitignored, never commit it) via Playwright's
+  `context.storage_state()`.
+  1. Generate it locally:
+     ```powershell
+     $env:TODOIST_EMAIL = "you@example.com"
+     $env:TODOIST_PASSWORD = "your-password"
+     python scripts/generate_storage_state.py
+     ```
+     (Requires a real Google Chrome installation. If Playwright complains
+     it can't find the `chrome` channel, run
+     `python -m playwright install chrome` once.)
+  2. Base64-encode the result and store it as the GitHub Secret
+     `TODOIST_STORAGE_STATE_B64`:
+     ```powershell
+     $bytes = [IO.File]::ReadAllBytes("storageState.json")
+     $b64 = [Convert]::ToBase64String($bytes)
+     gh secret set TODOIST_STORAGE_STATE_B64 --body $b64
+     ```
+  3. Both `pr_gate.yml` and `nightly.yml` decode this secret back into
+     `storageState.json` at the start of the job, and
+     `Open Todoist App With Saved Session`
+     (`tests/resources/keywords/ui_keywords.resource`) loads it via
+     Browser Library's `New Context storageState=...` - no login form
+     automation involved.
+  4. Todoist sessions last on the order of days to weeks. When the saved
+     session expires, UI tests fail immediately and loudly at Suite Setup
+     with a message telling you to repeat steps 1-2 - see
+     `Docs/test_plan.md` → "Known limitations" for why this is a manual
+     step rather than an automated refresh.
 
 ### When tests run
 - **PR/push gate** (`.github/workflows/pr_gate.yml`): `smoke` +
@@ -75,11 +115,14 @@ Library, GitHub Actions CI).
 ## Known limitations
 
 See `Docs/test_plan.md` → "Known limitations" for the full list. The
-main one: **UI login fails on a disabled submit button, not on missing
-credentials.** `TODOIST_EMAIL`/`TODOIST_PASSWORD` are configured as
-GitHub Secrets and `pr_gate.yml` has run live against them (2026-08-28,
-runs `33159448692` and `33159854560`) - see `Docs/test_plan.md` for the
-exact failure and root-cause hypothesis before you trust the UI suites.
+main one: **Todoist's login form is behind Cloudflare Turnstile**, which
+blocks scripted logins - confirmed live (2026-08-28) via a DOM dump
+showing an empty `cf-turnstile-response` token, not a missing
+consent/agreement checkbox as first suspected. UI tests work around this
+by loading a pre-generated Playwright session instead of automating the
+login form (see "How credentials are handled" above) - the residual
+limitation is that this saved session needs periodic manual
+regeneration once it expires.
 
 ## Project structure
 
@@ -97,6 +140,8 @@ exact failure and root-cause hypothesis before you trust the UI suites.
 │   ├── variables.robot        # API/UI base URLs, credentials (from env), Browser settings
 │   ├── credentials.template   # Documents required env vars - no real values
 │   └── known_defects.yaml     # known_defect registry
+├── scripts/
+│   └── generate_storage_state.py   # One-off: human-driven login -> storageState.json
 ├── .github/workflows/
 │   ├── pr_gate.yml
 │   └── nightly.yml
@@ -117,8 +162,11 @@ exact failure and root-cause hypothesis before you trust the UI suites.
    rfbrowser init
    ```
 3. Copy `config/credentials.template` and set the environment variables it
-   lists (at minimum `TODOIST_API_TOKEN` for API tests; also
-   `TODOIST_EMAIL` / `TODOIST_PASSWORD` for UI tests).
+   lists (at minimum `TODOIST_API_TOKEN` for API tests).
+4. For UI tests, generate a Playwright session once - see "How
+   credentials are handled" above - and make sure `storageState.json`
+   exists at the repo root (or set `TODOIST_STORAGE_STATE_PATH` to point
+   at it elsewhere).
 
 ## Running locally
 
@@ -147,9 +195,11 @@ Results (`log.html`, `report.html`, `output.xml`) are written to
 Pushes/PRs trigger `pr_gate.yml` automatically (smoke + regression).
 `nightly.yml` runs on its own schedule, or on demand via the "Run
 workflow" button in the Actions tab. Both require `TODOIST_API_TOKEN`,
-`TODOIST_EMAIL`, `TODOIST_PASSWORD`, and (optionally)
-`TODOIST_SHARE_TEST_EMAIL` to be configured as repository/organization
-GitHub Secrets.
+`TODOIST_STORAGE_STATE_B64`, and (optionally) `TODOIST_SHARE_TEST_EMAIL`
+to be configured as repository/organization GitHub Secrets.
+`TODOIST_EMAIL`/`TODOIST_PASSWORD` can also be kept as secrets for
+convenience, but neither workflow reads them - see "How credentials are
+handled" above.
 
 ## Known defects registry
 

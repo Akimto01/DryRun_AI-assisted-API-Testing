@@ -29,14 +29,24 @@ summary, not a second place to edit those facts).
   rationale") - není duplikováno zde
 
 ## 4. How credentials are handled
-- `TODOIST_API_TOKEN`, `TODOIST_EMAIL`, `TODOIST_PASSWORD` — samostatné
-  proměnné, nikdy spojené do jednoho stringu
+- `TODOIST_API_TOKEN`, `TODOIST_EMAIL`, `TODOIST_PASSWORD`,
+  `TODOIST_STORAGE_STATE_B64` — samostatné proměnné, nikdy spojené do
+  jednoho stringu
 - Lokálně: Windows Credential Manager (případně env proměnné pro
   dočasné session), nikdy v repu ani v `.env` commitnutém do gitu
 - CI: GitHub Secrets, namapované do env v `pr_gate.yml` a `nightly.yml`
   (namapování ověřeno živě - viz sekce 8)
 - `config/credentials.template` v repu jako dokumentační vzor bez
   reálných hodnot
+
+> Řešeno 2026-08-28: `TODOIST_EMAIL`/`TODOIST_PASSWORD` zůstávají v
+> GitHub Secrets, ale **žádný CI workflow je nečte** - Todoist login je
+> za Cloudflare Turnstile (viz sekce 7), takže se nikdy neautomatizuje.
+> Slouží už jen jako vstup pro lokální `scripts/generate_storage_state.py`,
+> který jednorázově (člověkem) vygeneruje Playwright `storageState.json`;
+> ten se pak přes `TODOIST_STORAGE_STATE_B64` (base64) dostane do CI a
+> UI testy ho načtou místo automatizace login formuláře. Detail v
+> README.md "How credentials are handled".
 
 ## 5. When tests run
 - PR/push gate (`pr_gate.yml`): smoke + regression, vyloučit
@@ -63,15 +73,17 @@ summary, not a second place to edit those facts).
   stav: pokryto/částečně/TODO)
 
 ## 7. Known limitations / open items
-- UI login postaven na standardním email+password formuláři (Google/Apple
-  SSO by Playwright blokoval). **Login fails on a disabled submit
-  button, not on missing credentials** - `TODOIST_EMAIL`/
-  `TODOIST_PASSWORD` are configured and `pr_gate.yml` has run live
-  against them (2026-08-28, runs `33159448692` and `33159854560`); see
-  `Docs/test_plan.md` → "Known limitations" for the exact failure
-  (`Click ${LOGIN_SUBMIT_BUTTON}` in `Log In To Todoist`) and root-cause
-  hypothesis (unhandled consent/agreement element) - authoritative, not
-  duplicated in full here
+- **UI login je za Cloudflare Turnstile, ne za consent checkboxem** (živá
+  diagnostika 2026-08-28 vyvrátila původní hypotézu o nezaškrtnutém
+  souhlasu - stránka nemá žádný checkbox; blokuje ji anti-bot Turnstile
+  widget). Řešeno persisted-storageState architekturou: UI testy login
+  formulář vůbec neautomatizují, místo toho načtou Playwright session
+  vygenerovanou člověkem (`scripts/generate_storage_state.py`) přes
+  `Open Todoist App With Saved Session`. Zbytkové omezení: session
+  vyprší (dny až týdny) a vyžaduje ruční regeneraci - viz
+  `Docs/test_plan.md` → "Known limitations" pro plný popis
+  (authoritative, neduplikuji zde) a `Docs/BACKLOG.md` pro
+  zvažovaný-a-odložený auto-refresh
 - `DELETE /tasks/{id}` je soft delete (`is_deleted: true`),
   `DELETE /projects/{id}` je hard delete (404) — asymetrie
   zdokumentovaná v README a promítnutá do assertions v
@@ -81,17 +93,18 @@ summary, not a second place to edit those facts).
 - Struktura `tests/`, `config/` atd. je přímo v kořeni repa, ne ve
   vnořené složce `TodoistTestFramework/` — repo samo je projekt
 
-> Řešeno 2026-08-28: formulace o UI loginu byla zastaralá (popisovala
-> stav "credentials chybí, nikdy neběželo naživo" z doby scaffoldingu).
-> Nahrazena přesným popisem výše, sjednoceným s `README.md` a
+> Řešeno 2026-08-28 (aktualizováno): formulace o UI loginu prošla dvěma
+> koly - nejdřív ze zastaralého "credentials chybí" na "consent checkbox
+> blokuje submit" (diagnostikováno živě, ale hypotéza byla mylná), teď
+> na finální, potvrzený stav (Cloudflare Turnstile) a jeho řešení
+> (persisted storage state). Sjednoceno s `README.md` a
 > `Docs/test_plan.md`.
 
 ## 8. Next steps
-- Opravit `Log In To Todoist`
-  (`tests/resources/keywords/ui_keywords.resource`), aby zvládl
-  consent/agreement prvek blokující submit button (viz sekce 7 a
-  `Docs/BACKLOG.md` pro kandidátní opravu), pak doladit/re-testovat
-  zbytek UI locators proti živému účtu
+- Ověřit `Open Todoist App With Saved Session` proti reálně
+  vygenerovanému `storageState.json` (běh `scripts/generate_storage_state.py`
+  čeká na uživatele - viz README.md), pak doladit/re-testovat zbytek UI
+  locators proti živému účtu
 - Rozšířit `labels_filters`, `sharing`, `recurring_tasks` a
   `sections_api` o zbývající scénáře
 - Dotáhnout Resend e-mail krok v nightly workflow

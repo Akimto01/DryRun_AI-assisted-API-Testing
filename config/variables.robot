@@ -29,6 +29,14 @@ ${TODOIST_PASSWORD}         %{TODOIST_PASSWORD=}
 # Set to a real, distinct mailbox you control to also verify acceptance.
 ${SHARE_TEST_EMAIL}         %{TODOIST_SHARE_TEST_EMAIL=share-test-placeholder@example.com}
 
+# Playwright storage state (session cookies), used instead of automating
+# the login form - Todoist's login is behind Cloudflare Turnstile, which
+# blocks scripted logins. Generated locally by
+# scripts/generate_storage_state.py (a human completes the real login),
+# then restored from the TODOIST_STORAGE_STATE_B64 GitHub Secret in CI.
+# See README.md ("How credentials are handled") for the full procedure.
+${STORAGE_STATE_PATH}       %{TODOIST_STORAGE_STATE_PATH=storageState.json}
+
 # --- Browser Library ---
 ${BROWSER}                  chromium
 ${HEADLESS}                 ${TRUE}

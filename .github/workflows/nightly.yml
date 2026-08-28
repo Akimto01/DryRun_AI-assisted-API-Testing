@@ -15,9 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
-      TODOIST_EMAIL: ${{ secrets.TODOIST_EMAIL }}
-      TODOIST_PASSWORD: ${{ secrets.TODOIST_PASSWORD }}
       TODOIST_SHARE_TEST_EMAIL: ${{ secrets.TODOIST_SHARE_TEST_EMAIL }}
+      TODOIST_STORAGE_STATE_B64: ${{ secrets.TODOIST_STORAGE_STATE_B64 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,6 +28,12 @@ jobs:
         run: |
           pip install -r requirements.txt
           rfbrowser init
+
+      - name: Restore Playwright storage state (UI login session)
+        shell: pwsh
+        run: |
+          $bytes = [Convert]::FromBase64String($env:TODOIST_STORAGE_STATE_B64)
+          [IO.File]::WriteAllBytes('storageState.json', $bytes)
 
       - name: Run full suite (known_defect tests reported as SKIP, not FAIL)
         shell: pwsh

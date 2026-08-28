@@ -13,3 +13,6 @@ output.xml
 # Secrets - never commit real credentials
 .env
 .env.local
+
+# Playwright storage state (session cookies) - see scripts/generate_storage_state.py
+storageState.json

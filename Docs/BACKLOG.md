@@ -2,23 +2,46 @@
 
 Ideas and known gaps for extending this framework, roughly in priority order.
 
-- [ ] Fix `Log In To Todoist` (`tests/resources/keywords/ui_keywords.resource`):
-      live runs (2026-08-28, `pr_gate.yml` runs `33159448692` and
-      `33159854560`) show the login submit button stays
-      `aria-disabled="true"` (`aria-describedby="agreement-footnote"`)
-      after filling email/password, so `Click ${LOGIN_SUBMIT_BUTTON}`
-      times out. Candidate fix, *not yet applied* - inspect the actual
-      login page (e.g. a Playwright trace/screenshot on failure) for the
-      consent/agreement element referenced by `agreement-footnote`; if
-      it's a simple checkbox, adding one `Click Element` (or equivalent
-      Browser Library keyword) on it before the existing
-      `Click ${LOGIN_SUBMIT_BUTTON}` call may be enough to unblock the
-      button. Needs confirmation against the live page before editing
-      the keyword - the exact selector isn't known yet.
-- [ ] Once login succeeds, verify the rest of
-      `tests/resources/locators/app_locators.robot` against the real
-      account and fix up any selectors that don't match. See
-      Docs/test_plan.md "Known limitations".
+- [x] ~~Fix `Log In To Todoist` by clicking a consent/agreement
+      checkbox~~ - **superseded, hypothesis disproven.** A live DOM dump
+      (2026-08-28, throwaway `diagnose_login.yml`/`scripts/diagnose_login.py`,
+      since removed) found zero `input[type="checkbox"]` elements on the
+      login page; `aria-describedby="agreement-footnote"` just points at
+      a plain-text ToS/Privacy disclaimer, not an interactive element.
+      The actual blocker is a hidden Cloudflare Turnstile widget
+      (`#cf-turnstile`) with an empty `cf-turnstile-response` token -
+      anti-bot detection, not a missed click. See Docs/test_plan.md
+      "Known limitations" for the full diagnosis.
+- [x] Implemented persisted-storage-state login (2026-08-28):
+      `scripts/generate_storage_state.py` (human completes the real
+      login once, headed Chrome) + `Open Todoist App With Saved Session`
+      (`tests/resources/keywords/ui_keywords.resource`) loading it via
+      `New Context storageState=...`, restored in CI from the
+      `TODOIST_STORAGE_STATE_B64` secret. UI tests no longer automate
+      the login form at all.
+- [ ] **Not yet done: actually generate `storageState.json` and set the
+      `TODOIST_STORAGE_STATE_B64` GitHub Secret** - requires a human
+      (with real Todoist credentials) to run
+      `scripts/generate_storage_state.py` locally; an AI agent can't
+      complete Turnstile/interactive login on someone's behalf. Until
+      this is done, every UI suite will fail loudly at Suite Setup with
+      a message pointing back to this step.
+- [ ] Once a real `storageState.json` exists, verify
+      `Open Todoist App With Saved Session` and the rest of
+      `tests/resources/locators/app_locators.robot` against the live
+      account and fix up any selectors that don't match.
+- [ ] **Considered and deliberately deferred: automated storageState
+      refresh.** A scheduled workflow could try to keep the session
+      alive by periodically re-exporting `storage_state()` after a test
+      run and writing it back to the GitHub Secret - but doing that
+      requires a workflow with permission to rewrite repository secrets
+      (the default `GITHUB_TOKEN` can't; it would need a PAT stored as
+      another secret), which is a meaningfully larger attack surface if
+      the workflow or a dependency is ever compromised. It also
+      wouldn't eliminate manual regeneration entirely - a hard session
+      expiry, password change, or logout-everywhere would still need
+      it. Revisit only if manual regeneration (expected every few
+      weeks) turns out to be a real operational pain in practice.
 - [ ] Extend `tests/ui/labels_filters.robot` with filter creation/query
       coverage and multi-label scenarios.
 - [ ] Extend `tests/ui/sharing.robot` with a second real collaborator

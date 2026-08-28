@@ -1,19 +1,16 @@
 *** Settings ***
 Documentation    Selectors for the Todoist web app (app.todoist.com).
 ...              These are best-effort, based on Todoist's publicly
-...              observable UI structure - they have NOT been verified
-...              against a live account, because no TODOIST_EMAIL /
-...              TODOIST_PASSWORD were available while this framework was
-...              scaffolded (only an API token was provided). Verify and
-...              adjust these before relying on the UI suites - see
+...              observable UI structure and have not been exhaustively
+...              verified against a live account - adjust as needed. Note
+...              there are no login-form selectors here: the login form
+...              itself is never automated (Todoist's login is behind
+...              Cloudflare Turnstile, which blocks scripted logins) - see
+...              tests/resources/keywords/ui_keywords.resource
+...              ("Open Todoist App With Saved Session") and
 ...              Docs/test_plan.md "Known limitations".
 
 *** Variables ***
-# --- Login ---
-${LOGIN_EMAIL_INPUT}           input[type="email"]
-${LOGIN_PASSWORD_INPUT}        input[type="password"]
-${LOGIN_SUBMIT_BUTTON}         button[type="submit"]
-
 # --- App shell ---
 ${APP_TASK_LIST}               [data-testid="task-list"]
 ${MORE_OPTIONS_BUTTON}         [aria-label="More options"]

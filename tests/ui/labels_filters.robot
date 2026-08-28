@@ -3,14 +3,15 @@ Documentation    UI tests for labels and filters.
 ...              TODO: extend with filter creation/query coverage and
 ...              multi-label scenarios - only single-label assignment is
 ...              covered so far.
-...              KNOWN LIMITATION: login and app-shell locators have not
-...              been verified against a live account - see
+...              Uses a saved login session (Playwright storage state)
+...              instead of automating the login form - see
+...              tests/resources/keywords/ui_keywords.resource and
 ...              Docs/test_plan.md "Known limitations".
 Resource         ../../config/variables.robot
 Resource         ../resources/keywords/test_data.resource
 Resource         ../resources/keywords/ui_keywords.resource
 
-Suite Setup      Open Todoist App And Log In
+Suite Setup      Open Todoist App With Saved Session
 Suite Teardown   Close Todoist App
 Test Setup       Create Fresh Test Project For Label Tests
 Test Teardown    Delete Test Project    ${TEST_PROJECT_ID}

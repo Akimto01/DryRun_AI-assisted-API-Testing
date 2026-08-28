@@ -52,7 +52,7 @@ def main():
         context = browser.new_context()
         page = context.new_page()
 
-        page.goto(APP_BASE_URL, wait_until="networkidle")
+        page.goto(APP_BASE_URL, wait_until="load", timeout=45000)
         report_lines.append(f"Landed on URL: {page.url}")
 
         email_input = page.locator('input[type="email"]')

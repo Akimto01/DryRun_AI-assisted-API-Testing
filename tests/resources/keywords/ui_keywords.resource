@@ -22,6 +22,12 @@ Open Todoist App With Saved Session
     ...    and ${STORAGE_STATE_PATH} in config/variables.robot) instead of
     ...    automating the login form. Fails loudly with actionable
     ...    guidance if the saved session turns out to be missing/expired.
+    ...    Note: the account's Todoist UI language is Czech, and forcing
+    ...    English via locale/Accept-Language/?lang= was tried and doesn't
+    ...    work - Todoist renders UI language from a server-side account
+    ...    setting, not the client. Locators in app_locators.robot target
+    ...    the actual Czech UI text instead - see Docs/test_plan.md
+    ...    "Known limitations".
     Should Not Be Empty    ${STORAGE_STATE_PATH}
     ...    msg=STORAGE_STATE_PATH is not set. See config/variables.robot and README.md "How credentials are handled".
     New Browser    browser=${BROWSER}    headless=${HEADLESS}
@@ -49,6 +55,17 @@ Verify Todoist Session Is Valid
 Close Todoist App
     Close Browser
 
+Open Add Project Dialog
+    [Documentation]    Opens the "Add project" dialog. Todoist has no
+    ...    standalone add-project button - the sidebar "+" only renders in
+    ...    the DOM after hovering the "Moje projekty" section header, and
+    ...    it opens a small menu (rather than the form directly) with a
+    ...    "Přidat projekt" entry - verified live 2026-08-28. See the
+    ...    "Projects sidebar" comment in app_locators.robot.
+    Hover    ${PROJECTS_SECTION_HEADER}
+    Click    ${PROJECTS_SECTION_MENU_BUTTON}
+    Click    ${ADD_PROJECT_MENU_ITEM}
+
 Get Task Item Locator
     [Documentation]    Builds a locator matching the task row containing the given content.
     [Arguments]    ${content}
@@ -56,8 +73,9 @@ Get Task Item Locator
 
 Get Project Item Locator
     [Documentation]    Builds a locator matching the sidebar project entry with the given name.
+    ...    Verified live (2026-08-28): the element is an <li>, not a <div>.
     [Arguments]    ${name}
-    RETURN    xpath=//div[@data-testid="project-list-item"][contains(., "${name}")]
+    RETURN    xpath=//li[@data-testid="project-list-item"][contains(., "${name}")]
 
 Get Collaborator Row Locator
     [Documentation]    Builds a locator matching a project's collaborator/invite row for the given email.

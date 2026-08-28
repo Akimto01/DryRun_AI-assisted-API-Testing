@@ -18,7 +18,7 @@ Create A Project
     [Documentation]    Creating a project in the UI persists it (verified via the API).
     [Tags]    smoke
     ${name}=    Generate Unique Name    ${TEST_DATA_PREFIX}_projects-ui
-    Click    ${ADD_PROJECT_BUTTON}
+    Open Add Project Dialog
     Fill Text    ${PROJECT_NAME_INPUT}    ${name}
     Click    ${PROJECT_ADD_SUBMIT_BUTTON}
     ${project_locator}=    Get Project Item Locator    ${name}
@@ -39,7 +39,7 @@ Rename A Project
     Click    ${project_locator} >> ${MORE_OPTIONS_BUTTON}
     Click    ${PROJECT_RENAME_MENU_ITEM}
     Fill Text    ${PROJECT_NAME_INPUT}    ${new_name}
-    Click    ${PROJECT_ADD_SUBMIT_BUTTON}
+    Click    ${PROJECT_RENAME_SUBMIT_BUTTON}
     ${project}=    API Get Project    ${project_id}
     Should Be Equal    ${project}[name]    ${new_name}
     [Teardown]    Delete Test Project    ${project_id}

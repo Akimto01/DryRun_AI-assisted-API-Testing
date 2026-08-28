@@ -1,0 +1,39 @@
+name: Diagnose Login (throwaway)
+
+# Manual, throwaway diagnostic - NOT part of the regular CI gates.
+# Opens the Todoist login page, fills in credentials, but never clicks
+# submit. Captures a screenshot and an HTML/accessibility dump around
+# the submit button and the aria-describedby="agreement-footnote"
+# element so we can see what's blocking Log In To Todoist. Safe to
+# delete once the real fix is confirmed - see Docs/BACKLOG.md.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      TODOIST_EMAIL: ${{ secrets.TODOIST_EMAIL }}
+      TODOIST_PASSWORD: ${{ secrets.TODOIST_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Run login diagnostic (does not click submit)
+        run: python scripts/diagnose_login.py
+
+      - name: Upload diagnostic output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: login-diagnostic
+          path: results/diagnostics/

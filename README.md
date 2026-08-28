@@ -56,8 +56,13 @@ Library, GitHub Actions CI).
 - **Nightly** (`.github/workflows/nightly.yml`, cron `0 2 * * *` UTC): the
   full suite, including `known_defect` tests (run with
   `--skiponfailure known_defect` so they report as SKIP rather than FAIL).
-- **Manual** (`workflow_dispatch` on the nightly workflow): takes an
-  optional comma-separated `include_tags` input to run a specific subset.
+- **Manual** (`workflow_dispatch`, available on **both** workflows): each
+  takes an optional comma-separated `include_tags` input to run a
+  specific subset. On `pr_gate.yml` it defaults to `smoke,regression`
+  (matching its normal PR/push behavior) and `known_defect` is always
+  excluded regardless of what's selected; on `nightly.yml` it defaults to
+  running everything (including `known_defect`, reported as SKIP on
+  failure).
 
 ### How results are presented
 - `log.html` and `report.html` (plus `output.xml`) are uploaded as CI
@@ -70,11 +75,11 @@ Library, GitHub Actions CI).
 ## Known limitations
 
 See `Docs/test_plan.md` → "Known limitations" for the full list. The
-main one: **UI login and app-shell locators have not been verified
-against a live account** - no test-account email/password were
-available while this framework was scaffolded (only an API token was),
-so `tests/resources/locators/app_locators.robot` is best-effort and
-should be checked against a real login before you trust the UI suites.
+main one: **UI login fails on a disabled submit button, not on missing
+credentials.** `TODOIST_EMAIL`/`TODOIST_PASSWORD` are configured as
+GitHub Secrets and `pr_gate.yml` has run live against them (2026-08-28,
+runs `33159448692` and `33159854560`) - see `Docs/test_plan.md` for the
+exact failure and root-cause hypothesis before you trust the UI suites.
 
 ## Project structure
 

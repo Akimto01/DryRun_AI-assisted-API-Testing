@@ -4,7 +4,12 @@ on:
   pull_request:
   push:
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      include_tags:
+        description: 'Comma-separated tags to include (default: smoke,regression)'
+        required: false
+        default: 'smoke,regression'
 
 jobs:
   test:
@@ -26,9 +31,13 @@ jobs:
           pip install -r requirements.txt
           rfbrowser init
 
-      - name: Run smoke + regression tests (known_defect excluded)
+      - name: Run tests (tags selectable via workflow_dispatch; known_defect always excluded)
         shell: pwsh
-        run: ./run-tests.ps1 -Suite all -Include smoke,regression -Exclude known_defect -ResultsDir results
+        run: |
+          $tagsInput = "${{ github.event.inputs.include_tags }}"
+          if (-not $tagsInput) { $tagsInput = 'smoke,regression' }
+          $tags = $tagsInput -split ',' | ForEach-Object { $_.Trim() }
+          ./run-tests.ps1 -Suite all -Include $tags -Exclude known_defect -ResultsDir results
 
       - name: Upload test results
         if: always()
